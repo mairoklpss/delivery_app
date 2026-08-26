@@ -1,6 +1,7 @@
-from fastapi import APIRouter
-from models import Usuario, db
-from sqlalchemy.orm import sessionmaker
+from fastapi import APIRouter, Depends
+from models import Usuario
+from dependencies import pegar_sessao
+from main import bcrypt_context
 
 # roteador para autenticação
 # prefixo: caminho da rota, tags: subtitulo da documentação
@@ -17,19 +18,19 @@ async def home():
 
 @auth_router.post('/criar_conta')
 #função de criar conta, recebe email e senha como parâmetros e ambos sao STRING
-async def criar_conta(email: str, senha: str, nome: str):
-    Session = sessionmaker(bind=db)
-    #cada alteração no banco de dados precisa ser feita dentro de uma sessão aberta.
-    session = Session()
-    
+async def criar_conta(email: str, senha: str, nome: str, session=Depends(pegar_sessao)):
+
     # verificar se o usuário com o mesmo email já existe no banco de dados
     usuario = session.query(Usuario).filter(Usuario.email == email).first()
     if usuario:
         return { "message": "Usuário já existe!" }
         # ja existe algum usuario
     else: 
-        novo_usuario = Usuario(nome, email, senha)
+        senha_criptografada = bcrypt_context.hash(senha)
+        novo_usuario = Usuario(nome, email, senha_criptografada)
         session.add(novo_usuario)
         # vai salvar o usuario
         session.commit()
         return { "message": "Usuário criado com sucesso!"}
+
+    
