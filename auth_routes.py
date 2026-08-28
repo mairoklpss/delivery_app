@@ -36,7 +36,7 @@ async def home():
 async def criar_conta(usuario_schema: UsuarioSchema, session: Session=Depends(pegar_sessao)):
 
     # verificar se o usuário com o mesmo email já existe no banco de dados
-    usuario = autenticacao(login_schema.email, login_schema.senha, session)
+    usuario = session.query(Usuario).filter(Usuario.email == usuario_schema.email).first()
     if usuario:
         # ja existe algum usuario
         raise HTTPException(status_code=400, detail="E-mail de Usuário já cadastrado") 
